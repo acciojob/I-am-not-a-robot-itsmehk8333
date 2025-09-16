@@ -1,7 +1,6 @@
-//your code here
 // script.js
 
-// Image sources (these match CSS .img1.. etc but we use direct URLs so comparison is reliable)
+// Image sources (we use direct URLs so comparison is reliable)
 const imageSources = [
   "https://picsum.photos/id/237/200/300",       // img1
   "https://picsum.photos/seed/picsum/200/300",  // img2
@@ -16,10 +15,10 @@ const verifyBtn = document.getElementById("verify");
 const message = document.getElementById("para");
 const header = document.getElementById("h");
 
-let selectedEls = []; // store DOM elements of selected tiles
-let tiles = []; // store current tile elements (for cleanup if needed)
+let selectedEls = []; // currently selected tiles
+let tiles = [];       // current tile elements
 
-// Utility: Fisher-Yates shuffle
+// Fisher-Yates shuffle (returns a shuffled copy)
 function shuffle(array) {
   const a = array.slice();
   for (let i = a.length - 1; i > 0; i--) {
@@ -29,10 +28,9 @@ function shuffle(array) {
   return a;
 }
 
-// Build the 6-image array with one random duplicate
+// Build array of 6 image objects: five unique + one duplicate (randomly chosen)
 function buildImageArray() {
-  // pick one index to duplicate
-  const dupIndex = Math.floor(Math.random() * imageSources.length);
+  const dupIndex = Math.floor(Math.random() * imageSources.length); // which to duplicate
   const arr = [];
 
   // push all five unique
@@ -40,30 +38,34 @@ function buildImageArray() {
     arr.push({ src: imageSources[i], id: `img${i + 1}` });
   }
 
-  // add the duplicate copy of chosen one
+  // add duplicate of chosen one
   arr.push({ src: imageSources[dupIndex], id: `img${dupIndex + 1}` });
 
   // shuffle and return
   return shuffle(arr);
 }
 
+// Reset selection to initial state (no tiles selected).
+// If hardReset === true, also reshuffle & rebuild the grid.
 function resetSelection(hardReset = false) {
-  // Remove selected class
+  // remove selected styling
   selectedEls.forEach(el => el.classList.remove("selected"));
   selectedEls = [];
-  message.textContent = "";
+
+  // hide buttons & clear messages
   verifyBtn.style.display = "none";
   resetBtn.style.display = "none";
+  message.textContent = "";
   header.textContent = "Please click on the identical tiles to verify that you are not a robot.";
 
   if (hardReset) {
-    // Rebuild tiles (new shuffle & duplicate)
-    populateGrid();
+    populateGrid(); // rebuild with new duplicate & shuffle
   }
 }
 
+// Create tile <img> elements and attach click handlers
 function populateGrid() {
-  // Clear previous
+  // clear previous
   grid.innerHTML = "";
   tiles = [];
 
@@ -71,37 +73,33 @@ function populateGrid() {
 
   images.forEach((imgObj, idx) => {
     const img = document.createElement("img");
-    // store data attributes for identity comparison
-    img.dataset.tileId = imgObj.id; // e.g., img1..img5
-    img.dataset.src = imgObj.src;   // store src also
+    img.dataset.tileId = imgObj.id; // identity (img1..img5)
+    img.dataset.src = imgObj.src;   // store src for equality comparison
     img.src = imgObj.src;
-    img.alt = `tile-${idx+1}`;
+    img.alt = `tile-${idx + 1}`;
     img.style.cursor = "pointer";
 
-    // click handler
+    // click handler for selection
     img.addEventListener("click", () => {
-      // If verify already clicked and result shown, ignore further clicks until reset
-      if (verifyBtn.style.display === "none" && message.textContent) {
-        // do nothing — user must RESET to try again
-        return;
-      }
+      // If verification already done (message shown) then ignore further clicks until Reset
+      if (verifyBtn.style.display === "none" && message.textContent) return;
 
-      // prevent selecting same tile twice
+      // Prevent selecting same tile twice
       if (selectedEls.includes(img)) return;
 
-      // if already two selected, ignore additional clicks
+      // Ignore clicks after two picks
       if (selectedEls.length >= 2) return;
 
-      // add selection
+      // Mark selection
       selectedEls.push(img);
       img.classList.add("selected");
 
-      // show reset button if at least one
+      // Show Reset when at least one tile selected
       if (selectedEls.length >= 1) {
         resetBtn.style.display = "inline-block";
       }
 
-      // show verify button only when exactly two distinct tiles selected
+      // Show Verify only when exactly two distinct tiles selected
       if (selectedEls.length === 2) {
         verifyBtn.style.display = "inline-block";
       }
@@ -111,21 +109,22 @@ function populateGrid() {
     tiles.push(img);
   });
 
-  // ensure Reset & Verify hidden initially
+  // Ensure both buttons hidden at initial render
   resetBtn.style.display = "none";
   verifyBtn.style.display = "none";
   message.textContent = "";
+  header.textContent = "Please click on the identical tiles to verify that you are not a robot.";
 }
 
 // Verify button logic
 verifyBtn.addEventListener("click", () => {
-  if (selectedEls.length !== 2) return; // safety
+  if (selectedEls.length !== 2) return; // safety check
 
-  // Hide verify after click
+  // Hide verify after clicking (per acceptance criteria)
   verifyBtn.style.display = "none";
 
   const [a, b] = selectedEls;
-  // compare by data-src or data-tileId (since duplicate has same src & same tileId)
+  // Compare by data-src (duplicate will have same src)
   const same = a.dataset.src === b.dataset.src;
 
   if (same) {
@@ -137,14 +136,17 @@ verifyBtn.addEventListener("click", () => {
   }
 });
 
-// Reset button logic
+// Reset button logic: clear selection state and hide Reset (return to State 1)
+// If you'd like Reset to reshuffle, change resetSelection() to resetSelection(true)
 resetBtn.addEventListener("click", () => {
-  resetSelection(); // return to State 1 (keeps same tiles by default)
+  resetSelection(); // pass true to reshuffle: resetSelection(true)
 });
 
-// initialize on load
+// Initialize the grid on page load
 populateGrid();
 
-// Optional: allow hard reset (reshuffle) when user double-clicks header
-// Not required by acceptance criteria; commented out.
-// header.addEventListener('dblclick', () => populateGrid());
+/* ---------- Optional tweaks ----------
+If you prefer the Reset button to reshuffle & rebuild tiles (instead of keeping same layout),
+change the reset handler above to:
+  resetBtn.addEventListener("click", () => resetSelection(true));
+--------------------------------------*/
