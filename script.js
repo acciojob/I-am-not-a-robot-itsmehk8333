@@ -33,7 +33,7 @@ function buildImageArray() {
   const dupIndex = Math.floor(Math.random() * imageSources.length); // which to duplicate
   const arr = [];
 
-  // push all five unique
+  // push all five unique with id names 'img1'..'img5'
   for (let i = 0; i < imageSources.length; i++) {
     arr.push({ src: imageSources[i], id: `img${i + 1}` });
   }
@@ -73,6 +73,11 @@ function populateGrid() {
 
   images.forEach((imgObj, idx) => {
     const img = document.createElement("img");
+
+    // add the class that Cypress & your CSS expect (e.g., 'img1', 'img2', ...)
+    // also add a generic 'tile' class if you want
+    img.classList.add(imgObj.id); // <<< important: adds .img1/.img2/... classes
+
     img.dataset.tileId = imgObj.id; // identity (img1..img5)
     img.dataset.src = imgObj.src;   // store src for equality comparison
     img.src = imgObj.src;
